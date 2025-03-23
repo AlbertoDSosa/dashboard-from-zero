@@ -2,18 +2,22 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\Group;
+
 use Tests\TestCase;
 
 class GeneralTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_only_admin_users_can_diplay_log_viewer_page(): void
+    use RefreshDatabase;
+
+    #[Group('general'), Test]
+    public function only_admin_users_can_diplay_log_viewer_page(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);
 
@@ -26,11 +30,18 @@ class GeneralTest extends TestCase
         $technician->assignRole('technician');
 
         $this->get('/log-viewer')
-            ->assertForbidden();
+            ->assertRedirect('login');
+
+        $this->get('/log-viewer/api/files')
+            ->assertRedirect('login');
 
         $this->actingAs($technician);
+        $this->get('/profile');
         $this->get('/log-viewer')
-            ->assertForbidden();
+            ->assertRedirect('profile');
+        $this->get('/profile');
+        $this->get('/log-viewer/api/files')
+            ->assertRedirect('profile');
 
         $this->actingAs($admin);
         $this->get('/log-viewer')
