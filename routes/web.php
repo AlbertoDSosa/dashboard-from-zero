@@ -21,6 +21,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('users');
     Volt::route('users/create', 'users.create')
         ->name('users.create');
+    Volt::route('users/edit/{user:uuid}', 'users.edit')
+        ->name('users.edit');
 });
 
 

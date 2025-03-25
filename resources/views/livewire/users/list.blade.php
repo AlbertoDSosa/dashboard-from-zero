@@ -10,6 +10,12 @@ layout('layouts.app');
 
 with(fn () => ['users' => User::paginate(10)]);
 
+$delete = function ($userId) {
+    $user = User::find($userId);
+
+    $user->delete();
+};
+
 ?>
 
 <x-slot name="header">
@@ -65,6 +71,8 @@ with(fn () => ['users' => User::paginate(10)]);
                         <th scope="col" class="px-6 py-4">#</th>
                         <th scope="col" class="px-6 py-4">Name</th>
                         <th scope="col" class="px-6 py-4">Email</th>
+                        <th scope="col" class="px-6 py-4">Active</th>
+                        <th scope="col" class="px-6 py-4">Role</th>
                         <th scope="col" class="px-6 py-4">Verified</th>
                         <th scope="col" class="px-6 py-4">Actions</th>
                       </tr>
@@ -75,10 +83,12 @@ with(fn () => ['users' => User::paginate(10)]);
                         <td class="whitespace-nowrap px-6 py-4 font-medium">{{$user->id}}</td>
                         <td class="whitespace-nowrap px-6 py-4">{{$user->name}}</td>
                         <td class="whitespace-nowrap px-6 py-4">{{$user->email}}</td>
+                        <td class="whitespace-nowrap px-6 py-4">{{$user->active ? 'Sí' : 'No'}}</td>
+                        <td class="whitespace-nowrap px-6 py-4">{{$user->mainRole ? $user->mainRole->display_name : 'No Role'}}</td>
                         <td class="whitespace-nowrap px-6 py-4">{{$user->email_verified_at}}</td>
                         <td class="whitespace-nowrap px-6 py-4">
                           <div class="flex gap-4">
-                            <a href="#" class="cursor-pointer" type="button">
+                            <a href="{{route('users.edit', ['user' => $user])}}" class="cursor-pointer" type="button">
                               <svg class="w-[24px] h-[24px] fill-[#8e8e8e]" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
 
                                 <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
@@ -86,7 +96,10 @@ with(fn () => ['users' => User::paginate(10)]);
 
                               </svg>
                             </a>
-                            <button class="cursor-pointer">
+                            <button
+                                wire:click="delete({{$user->id}})" class="cursor-pointer"
+                                wire:confirm="Are you sure you want to delete this user?"
+                            >
                               <svg class="w-[24px] h-[24px] fill-[#8e8e8e]" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
 
                                 <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->

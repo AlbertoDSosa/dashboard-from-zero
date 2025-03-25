@@ -56,10 +56,18 @@ class CreateTest extends TestCase
             ->set('name', 'Test User')
             ->set('email', 'test@example.com')
             ->set('password', 'password')
-            ->set('password_confirmation', 'password');
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'admin');
 
         $component->call('create');
 
         $component->assertRedirect(route('users', absolute: false));
+
+        $user = User::where('email', 'test@example.com')->first();
+
+        $this->assertNotNull($user->mainRole);
+
+        $this->assertSame($user->mainRole->name, 'admin');
     }
 }

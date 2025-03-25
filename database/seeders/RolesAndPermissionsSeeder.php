@@ -18,17 +18,20 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $admin = Role::create([
             'name' => 'admin',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
+            'display_name' => 'Administrator'
         ]);
 
         $technician = Role::create([
             'name' => 'technician',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
+            'display_name' => 'Technician'
         ]);
 
         $customer = Role::create([
             'name' => 'customer',
-            'guard_name' => 'web'
+            'guard_name' => 'web',
+            'display_name' => 'Customer'
         ]);
     }
 }

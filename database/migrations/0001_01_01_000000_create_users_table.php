@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Query\Expression;
+
 
 return new class extends Migration
 {
@@ -13,8 +15,10 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->uuid()->unique()->default(new Expression('(UUID())'));
             $table->string('name');
             $table->string('email')->unique();
+            $table->boolean('active')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

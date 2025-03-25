@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -22,7 +23,16 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'active'
     ];
+
+    public function getMainRoleAttribute() : ?Role {
+        if($this->roles->isEmpty()) {
+            return null;
+        }
+
+        return $this->roles->first();
+    }
 
     /**
      * The attributes that should be hidden for serialization.
