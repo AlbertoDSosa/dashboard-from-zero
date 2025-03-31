@@ -16,7 +16,45 @@ class ListTest extends TestCase
     use RefreshDatabase;
 
     #[Group('users'), Test]
-    public function test_it_can_render(): void
+    public function only_system_users_can_display_user_list_page(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $technician = User::factory()->create();
+        $technician->assignRole('technician');
+
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
+
+        $this->actingAs($technician);
+
+        $this->get('/profile');
+
+        $this->get('/users')
+        ->assertOk()
+        ->assertSeeVolt('users.list');
+
+        $this->actingAs($admin);
+
+        $this->get('/profile');
+
+        $this->get('/users')
+        ->assertOk()
+        ->assertSeeVolt('users.list');
+
+        $this->actingAs($customer);
+
+        $this->get('/profile');
+
+        $this->get('/users')
+            ->assertRedirectToRoute('profile');
+    }
+
+    #[Group('users'), Test]
+    public function only_admin_users_can_delete_users(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);
 
@@ -28,14 +66,26 @@ class ListTest extends TestCase
 
         $technician->assignRole('technician');
 
-        $this->actingAs($technician);
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
 
-        $response = $this->get('/users');
+        $user = User::factory()->create();
+        $user->assignRole('customer');
 
-        $response
-            ->assertOk()
-            ->assertSeeVolt('users.list');
+        Volt::actingAs($technician)
+            ->test('users.list')
+            ->call('delete', $user->uuid)
+            ->assertStatus(400);
 
+        Volt::actingAs($customer)
+            ->test('users.list')
+            ->call('delete', $user->uuid)
+            ->assertStatus(400);
+
+        Volt::actingAs($admin)
+            ->test('users.list')
+            ->call('delete', $user->uuid)
+            ->assertOk();
     }
 
     #[Group('users'), Test]
@@ -44,19 +94,25 @@ class ListTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $admin = User::factory()->create();
-
-        $technician = User::factory()->create();
-
         $admin->assignRole('admin');
 
+        $technician = User::factory()->create();
         $technician->assignRole('technician');
+
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
+
+        Volt::actingAs($technician)
+            ->test('users.list')
+            ->call('delete', $customer->id)
+            ->assertStatus(400);
 
         Volt::actingAs($admin)
             ->test('users.list')
-            ->call('delete', $technician->id)
+            ->call('delete', $customer->uuid)
             ->assertOk();
 
-        $this->assertNull(User::find($technician->id));
+        $this->assertNull(User::find($customer->uuid));
 
     }
 }

@@ -5,10 +5,15 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 
 use function Livewire\Volt\{layout, rules, state, computed};
 
 layout('layouts.app');
+
+state([
+    'authUser' => fn() => Auth::user()
+])->locked();
 
 state([
     'name' => '',
@@ -20,7 +25,9 @@ state([
 ]);
 
 $roles = computed(function () {
-   return Role::all();
+   return Role::when($this->authUser->cannot('assign system roles'), function ($query) {
+        $query->where('is_from_system', false);
+   })->get();
 });
 
 rules([
@@ -42,7 +49,17 @@ rules([
 ]);
 
 $create = function () {
+    if($this->authUser->cannot('create users')) {
+        abort(400);
+    }
+
     $validated = $this->validate();
+
+    $selectedRole = Role::where('name', $validated['role'])->first();
+
+    if($selectedRole->is_from_system && $this->authUser->cannot('assign system roles')) {
+        abort(400);
+    }
 
     $validated['password'] = Hash::make($validated['password']);
 

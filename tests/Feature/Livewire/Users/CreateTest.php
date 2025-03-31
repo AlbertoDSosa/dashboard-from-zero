@@ -17,7 +17,45 @@ class CreateTest extends TestCase
     use RefreshDatabase;
 
     #[Group('users'), Test]
-    public function create_screen_can_be_rendered(): void
+    public function test_only_system_users_can_display_user_create_page(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $technician = User::factory()->create();
+        $technician->assignRole('technician');
+
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
+
+        $this->actingAs($technician);
+
+        $this->get('/profile');
+
+        $this->get('/users/create')
+            ->assertOk()
+            ->assertSeeVolt('users.create');
+
+        $this->actingAs($admin);
+
+        $this->get('/profile');
+
+        $this->get('/users/create')
+            ->assertOk()
+            ->assertSeeVolt('users.create');
+
+        $this->actingAs($customer);
+
+        $this->get('/profile');
+
+        $this->get('/users/create')
+            ->assertRedirectToRoute('profile');
+    }
+
+    #[Group('users'), Test]
+    public function only_system_users_can_create_users(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);
 
@@ -29,12 +67,118 @@ class CreateTest extends TestCase
 
         $technician->assignRole('technician');
 
-        $this->actingAs($technician);
-        $response = $this->get('/users/create');
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
 
-        $response
-            ->assertOk()
-            ->assertSeeVolt('users.create');
+        Volt::actingAs($technician)->test('users.create')
+            ->set('name', 'Test User')
+            ->set('email', 'test@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'customer')
+            ->call('create')
+            ->assertRedirect(route('users', absolute: false));
+
+        Volt::actingAs($admin)->test('users.create')
+            ->set('name', 'Test User 1')
+            ->set('email', 'test1@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'admin')
+            ->call('create')
+            ->assertRedirect(route('users', absolute: false));
+
+        Volt::actingAs($customer)->test('users.create')
+            ->set('name', 'Test User 2')
+            ->set('email', 'test2@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'customer')
+            ->call('create')
+            ->assertStatus(400);
+    }
+
+    #[Group('users'), Test]
+    public function only_admin_users_can_list_system_roles(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $technician = User::factory()->create();
+        $technician->assignRole('technician');
+
+
+        $this->actingAs($technician);
+
+        $this->get('/users/create')
+        ->assertDontSeeText('Administrator')
+        ->assertDontSeeText('Technician');
+
+        $this->actingAs($admin);
+
+        $this->get('/users/create')
+            ->assertSeeText('Administrator')
+            ->assertSeeText('Technician');
+    }
+
+    #[Group('users'), Test]
+    public function only_admin_users_can_assign_system_roles(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $admin = User::factory()->create();
+
+        $technician = User::factory()->create();
+
+        $admin->assignRole('admin');
+        $technician->assignRole('technician');
+
+
+        Volt::actingAs($admin)->test('users.create')
+            ->set('name', 'Test User 1')
+            ->set('email', 'test1@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'admin')
+            ->call('create')
+            ->assertRedirect(route('users', absolute: false));
+
+        Volt::actingAs($admin)->test('users.create')
+            ->set('name', 'Test User 2')
+            ->set('email', 'test2@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'technician')
+            ->call('create')
+            ->assertRedirect(route('users', absolute: false));
+
+        Volt::actingAs($technician)->test('users.create')
+            ->set('name', 'Test User 3')
+            ->set('email', 'test3@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'admin')
+            ->call('create')
+            ->assertStatus(400);
+
+        Volt::actingAs($technician)->test('users.create')
+            ->set('name', 'Test User 4')
+            ->set('email', 'test4@example.com')
+            ->set('password', 'password')
+            ->set('password_confirmation', 'password')
+            ->set('active', true)
+            ->set('role', 'technician')
+            ->call('create')
+            ->assertStatus(400);
+
     }
 
     #[Group('users'), Test]
@@ -58,7 +202,7 @@ class CreateTest extends TestCase
             ->set('password', 'password')
             ->set('password_confirmation', 'password')
             ->set('active', true)
-            ->set('role', 'admin');
+            ->set('role', 'guest');
 
         $component->call('create');
 
@@ -68,6 +212,6 @@ class CreateTest extends TestCase
 
         $this->assertNotNull($user->mainRole);
 
-        $this->assertSame($user->mainRole->name, 'admin');
+        $this->assertSame($user->mainRole->name, 'guest');
     }
 }

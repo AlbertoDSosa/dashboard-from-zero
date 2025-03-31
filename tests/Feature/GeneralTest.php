@@ -46,6 +46,36 @@ class GeneralTest extends TestCase
         $this->actingAs($admin);
         $this->get('/log-viewer')
                 ->assertSuccessful();
+    }
 
+    #[Group('general'), Test]
+    public function only_system_users_can_see_users_link(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $admin = User::factory()->create();
+
+        $technician = User::factory()->create();
+
+        $admin->assignRole('admin');
+
+        $technician->assignRole('technician');
+
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
+
+        $this->actingAs($admin);
+
+        $this->get('/dashboard')
+            ->assertSeeText('Users');
+
+        $this->actingAs($technician);
+
+        $this->get('/dashboard')
+            ->assertSeeText('Users');
+
+        $this->actingAs($customer);
+        $this->get('/dashboard')
+            ->assertDontSeeText('Users');
     }
 }

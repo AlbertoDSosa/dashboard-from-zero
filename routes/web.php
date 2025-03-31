@@ -17,12 +17,14 @@ require __DIR__.'/auth.php';
 
 
 Route::middleware(['auth'])->group(function () {
-    Volt::route('users', 'users.list')
-        ->name('users');
-    Volt::route('users/create', 'users.create')
-        ->name('users.create');
-    Volt::route('users/edit/{user:uuid}', 'users.edit')
-        ->name('users.edit');
+    Route::middleware(['role:admin|technician'])->group(function ()  {
+        Volt::route('users', 'users.list')
+            ->name('users');
+        Volt::route('users/edit/{user:uuid}', 'users.edit')
+            ->name('users.edit');
+        Volt::route('users/create', 'users.create')
+            ->name('users.create');
+    });
 });
 
 

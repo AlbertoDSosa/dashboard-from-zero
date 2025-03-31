@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Forms;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,6 +29,7 @@ class LoginForm extends Form
      */
     public function authenticate(): void
     {
+        $this->checkIsActive();
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only(['email', 'password']), $this->remember)) {
@@ -60,6 +62,22 @@ class LoginForm extends Form
                 'minutes' => ceil($seconds / 60),
             ]),
         ]);
+    }
+
+    /**
+     *
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function checkIsActive(): void
+    {
+        $user = User::where('email', $this->email)->first();
+
+        if($user && !$user->active) {
+            throw ValidationException::withMessages([
+                'form.email' => trans('auth.failed'),
+            ]);
+        }
     }
 
     /**

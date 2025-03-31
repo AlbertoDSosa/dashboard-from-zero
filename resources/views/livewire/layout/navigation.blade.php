@@ -66,6 +66,7 @@ $logout = function (Logout $logout) {
             data-twe-nav-link-ref
             >Dashboard</a>
         </li>
+        @can('list users')
         <li class="mb-4 lg:mb-0 lg:pe-2 {{request()->routeIs('users') ? 'border-b-2 border-zinc-800' : '' }}" data-twe-nav-item-ref>
           <!-- Users link -->
           <a
@@ -77,6 +78,7 @@ $logout = function (Logout $logout) {
             >Users</a
           >
         </li>
+        @endcan
       </ul>
       <!-- Left links -->
     </div>

@@ -2,16 +2,30 @@
 
 use function Livewire\Volt\{state, with, usesPagination};
 use function Livewire\Volt\layout;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 usesPagination();
+
+state([
+    'authUser' => fn() => Auth::user()
+])->locked();
 
 layout('layouts.app');
 
 with(fn () => ['users' => User::paginate(10)]);
 
-$delete = function ($userId) {
-    $user = User::find($userId);
+$delete = function ($userUuid) {
+
+    if($this->authUser->cannot('delete users')) {
+        abort(400);
+    }
+
+    $user = User::where('uuid', $userUuid)->first();
+
+    if(!$user) {
+        abort(400);
+    }
 
     $user->delete();
 };
@@ -68,7 +82,9 @@ $delete = function ($userId) {
                     <thead
                       class="border-b border-neutral-200 font-medium dark:border-white/10">
                       <tr>
+                        @can('show user ids')
                         <th scope="col" class="px-6 py-4">#</th>
+                        @endcan
                         <th scope="col" class="px-6 py-4">Name</th>
                         <th scope="col" class="px-6 py-4">Email</th>
                         <th scope="col" class="px-6 py-4">Active</th>
@@ -80,7 +96,9 @@ $delete = function ($userId) {
                     <tbody>
                       @foreach ($users as $user)
                       <tr class="border-b border-neutral-200 dark:border-white/10">
+                        @can('show user ids')
                         <td class="whitespace-nowrap px-6 py-4 font-medium">{{$user->id}}</td>
+                        @endcan
                         <td class="whitespace-nowrap px-6 py-4">{{$user->name}}</td>
                         <td class="whitespace-nowrap px-6 py-4">{{$user->email}}</td>
                         <td class="whitespace-nowrap px-6 py-4">{{$user->active ? 'Sí' : 'No'}}</td>
@@ -96,8 +114,9 @@ $delete = function ($userId) {
 
                               </svg>
                             </a>
+                            @can('delete users')
                             <button
-                                wire:click="delete({{$user->id}})" class="cursor-pointer"
+                                wire:click="delete('{{$user->uuid}}')" class="cursor-pointer"
                                 wire:confirm="Are you sure you want to delete this user?"
                             >
                               <svg class="w-[24px] h-[24px] fill-[#8e8e8e]" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
@@ -107,6 +126,7 @@ $delete = function ($userId) {
 
                               </svg>
                             </button>
+                            @endcan
                           </div>
                         </td>
                       </tr>
